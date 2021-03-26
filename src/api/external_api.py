@@ -10,6 +10,10 @@ PROCESSING_API_HOST = os.environ.get('PROCESSING_API_HOST')
 
 
 class ProcessingAPIAdapter(object):
+    """
+    An adapter class to implement file processing API calls.
+    This is borrowed from my own implementation in erstwhile similar project.
+    """
     def __init__(self):
         self._host = PROCESSING_API_HOST
 
@@ -46,6 +50,9 @@ class ProcessingAPIAdapter(object):
     def _get(self, relative_url, headers=None, params=None, raise_on_error=True):
         """
         A wrapper method to GET results from an API.
+        Apart from calling requests.get it prepares the request and
+        handles the response appropriately so that the interface for
+        the adapter methods are simple.
         """
         if not params:
             params = {}
@@ -61,13 +68,22 @@ class ProcessingAPIAdapter(object):
         return self._respond_or_raise(response, raise_exec=raise_on_error)
 
     def fetch_all(self, limit=5, offset=0):
+        """
+        Adapter method to fetch all files ingested by Snackable through a paginated endpoint.
+        """
         relative_url = '/api/file/all'
         return self._get(relative_url, params={'limit': limit, 'offset': offset}).json()
 
     def fetch_details(self, file_id):
+        """
+        Adapter method to fetch additional file details for a given file id.
+        """
         relative_url = f'/api/file/details/{file_id}'
         return self._get(relative_url).json()
 
     def fetch_segments(self, file_id):
+        """
+        Adapter method to fetch file segment information for a given file id.
+        """
         relative_url = f'/api/file/segments/{file_id}'
         return self._get(relative_url).json()
