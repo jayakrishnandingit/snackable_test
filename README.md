@@ -14,14 +14,38 @@ input parameter. However, I am planning to implement authentication using JWT to
 
 ## Design
 
-Inorder to reduce the API call overhead, I have implemented the API using *gevent* concurrency. Gevent allows to spawn I/O jobs on a single thread using I/O loops and green threads. This is almost similar to how the Javascript event loop works.
+Inorder to reduce the API call overhead, I have implemented the API using *gevent* asynchronous jobs. Gevent allows to spawn I/O jobs on a single thread using I/O loops and green threads. This is almost similar to how the NodeJS event loop works.
 
 Moreover, gevent applies monkey patching to most of the sync libraries so that they behave asynchronously without the need for us to tweak the code. An excellent example, is the *requests* library which makes use of the *urllib* library under the hood which when used in conjunction with gevent is monkey patched to be asynchronous.
 
-Talking about the API implementation, I have designed the API in 3 stages.
-1. It tries to fetch the file from paginated endpoint by looking for first 200 pages (configured as MAX_PAGES env variable) ~ 1000 records.
-2. Once the file is fetched, I try to fetch the metadata using /api/file/details/{snackableFileId} API.
-3. At last, I try to fetch the segments from /api/file/segments/{snackableFileId} API.
+I have designed the API in 3 stages.
+1. It tries to fetch the file from paginated endpoint by looking for first 200 pages (configured as MAX_PAGES env variable) ~ 1000 records asynchronously.
+2. Once the file is fetched, I try to fetch the metadata using /api/file/details/{snackableFileId} API asynchronously.
+3. At last, I try to asynchronously fetch the segments from /api/file/segments/{snackableFileId} API.
+
+The data captured from the 3 APIs are merged to form a single JSON object and returned to the user. For example,
+
+```
+{
+    "fileId": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+    "processingStatus": "FINISHED",
+    "fileName": "FILE_NAME",
+    "mp3Path": "http://s3.amazonaws.com/snackable-test-audio/mp3Audio/audioFileName.mp3",
+    "originalFilepath":
+    "http://s3.amazonaws.com/snackable-test-audio/originalFile/audioFileName.mp3",
+    "seriesTitle": "Series Title",
+    "segments": [
+        {
+            "fileSegmentId": 2685,
+            "fileId": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+            "segmentText": "Full segment text",
+            "startTime": 3710,
+            "endTime": 4400
+        },
+        ..
+    ]
+}
+```
 
 In addition to that, if unable to find the file or the file is not in FINISHED status then the API raises a *404 Not Found* or *400 Bad Request* error respectively.
 
