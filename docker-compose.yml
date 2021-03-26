@@ -3,7 +3,7 @@ version: '3'
 services:
   mock_api:
     build:
-      context: .
+      context: ./src
       dockerfile: Dockerfile_mock
     image: snack_mock_api:latest
     ports:
@@ -13,7 +13,7 @@ services:
 
   api:
     build:
-      context: .
+      context: ./src
       dockerfile: Dockerfile
     image: snack_api:latest
     ports:
