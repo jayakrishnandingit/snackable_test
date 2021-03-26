@@ -5,6 +5,13 @@ LOGGER = logging.getLogger(__name__)
 
 
 def log_latency_decorator(func):
+    """
+    Decorator function to log time taken.
+    Example,
+    @log_latency_decorator
+    def f():
+        ..
+    """
     @wraps(func)
     def wrapper(*args, **kwargs):
         LOGGER.info(f"\nRunning {func.__name__}.")

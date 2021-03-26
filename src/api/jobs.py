@@ -71,6 +71,12 @@ class FetchFileSegmentsJob(object):
 
 
 class GeventJobs(object):
+    """
+    A class that is responsible for spawning gevent jobs.
+    This is a strategy for gevent specific work. If we aim
+    to build another async/sync way of acheiving work done here
+    we can implement a separate strategy class for it.
+    """
     def __init__(self, processing_api=None):
         if not processing_api:
             self._api = ProcessingAPIAdapter()
@@ -89,7 +95,8 @@ class GeventJobs(object):
 
     def is_file_not_found(self, jobs):
         """
-        Some jobs raised exception and others returned None (i.e, file not found in the page).
+        Some jobs raised exception and others returned None?
+        Then we have not found the file we are looking for.
         """
         values = [None for j in filter(lambda x: x.successful() and x.value is None, jobs)]
         errors = [None for j in filter(lambda x: not x.successful(), jobs)]
@@ -113,8 +120,18 @@ class GeventJobs(object):
 
     def fetch_file(self, file_id, limit=5, timeout=5, max_pages=MAX_PAGES):
         """
-        Fetch a file status via a paginated API. We limit the calls to MAX_PAGES pages.
+        Fetch a file via a paginated API. We limit the calls to MAX_PAGES pages.
         The method will spawn a gevent green thread for each API call.
+
+        I am not sure if this is the optimal approach, but given the contraints
+        I think looking at 1000 records (default MAX_PAGES = 200) concurrently is a good start.
+        We can change the no. of records by changing MAX_PAGES environment variable.
+
+        TODO: What can be the maximum number of records I may have to check to find a file?
+
+        The organic way of doing this will be for the file processing service to push a message
+        when it completes a file processing. Then we can consume that message and store in DB
+        for faster response to the user. This will require an async message queue system like RabbitMQ.
         """
         # local import to avoid installing this package if we are employing another strategy.
         import gevent
@@ -123,7 +140,7 @@ class GeventJobs(object):
         gevent.joinall(jobs)
 
         if self.is_all_error(jobs):
-            raise APIException("Could not reach API at the moment.")
+            raise APIException("Could not fetch the file at the moment.")
         if self.is_file_not_found(jobs):
             raise FileNotFound(f"File {file_id} not found in {max_pages} pages.")
 
@@ -143,7 +160,7 @@ class GeventJobs(object):
         job = gevent.spawn(FetchFileDetailsJob(file_id, self._api, timeout))
         gevent.joinall([job])
         if self.is_all_error([job]):
-            raise APIException("Could not reach processing API at all.")
+            raise APIException("Could not fetch the file details at the moment.")
         return self.get_data([job])[0]
 
     def fetch_file_segments(self, file_id, timeout=5):
@@ -156,5 +173,5 @@ class GeventJobs(object):
         job = gevent.spawn(FetchFileSegmentsJob(file_id, self._api, timeout))
         gevent.joinall([job])
         if self.is_all_error([job]):
-            raise APIException("Could not reach processing API at all.")
+            raise APIException("Could not fetch file segments at the moment.")
         return self.get_data([job])[0]
