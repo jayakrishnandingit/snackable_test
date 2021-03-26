@@ -18,10 +18,9 @@ jobs:
       - name: List all files.
         run: |
           ls -al
-      - name: Change to src dir
-        run: |
-          cd src
       - name: Docker build.
         run: docker-compose build api
       - name: Run flake8.
         run: docker-compose run --rm api flake8 .
+      - name: Run unittest.
+        run: docker-compose run --rm api python -m unittest

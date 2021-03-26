@@ -22,11 +22,13 @@ RUN pip install -r requirements.txt
 
 COPY .flake8 .flake8
 COPY core core/
+COPY api/__init__.py api/__init__.py
 COPY api/utils.py api/utils.py
 COPY api/exceptions.py api/exceptions.py
 COPY api/decorators.py api/decorators.py
 COPY api/external_api.py api/external_api.py
 COPY api/jobs.py api/jobs.py
 COPY api/app.py api/app.py
+COPY api/test api/test/
 
 CMD ["gunicorn", "-k", "gevent", "-w", "2", "api.app:app", "-b 0.0.0.0:9001", "-t 300"]

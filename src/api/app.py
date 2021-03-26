@@ -20,17 +20,17 @@ def file_details_api(file_id):
     try:
         the_file = strategy.fetch_file(file_id)
     except (FileInvalidStatusError, APIException) as e:
-        return make_response(str(e), 400)
+        return make_response(jsonify({'error': str(e)}), 400)
     except FileNotFound as e:
-        return make_response(str(e), 404)
+        return make_response(jsonify({'error': str(e)}), 404)
 
     try:
         the_file.update(strategy.fetch_file_details(file_id))
     except APIException as e:
-        return make_response(str(e), 400)
+        return make_response(jsonify({'error': str(e)}), 400)
 
     try:
         the_file.update({'segments': strategy.fetch_file_segments(file_id)})
     except APIException as e:
-        return make_response(str(e), 400)
+        return make_response(jsonify({'error': str(e)}), 400)
     return make_response(jsonify(the_file), 200)
