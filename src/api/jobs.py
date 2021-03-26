@@ -28,11 +28,14 @@ class FetchFilesJob(object):
             the_file = self.filter_by_id(file_list)
             if len(the_file) == 0:
                 return None
-            LOGGER.info(f"File {self.file_id} found at page {self.offset + 1}.")
+            LOGGER.info(f"File {self.file_id} found at page {self.offset + 1} with status {self.status(the_file[0])}.")
             return the_file[0]
 
     def filter_by_id(self, file_list):
         return list(filter(lambda r: r.get('fileId') == self.file_id, file_list))
+
+    def status(self, the_file):
+        return the_file.get('processingStatus')
 
 
 class FetchFileDetailsJob(object):
@@ -49,6 +52,22 @@ class FetchFileDetailsJob(object):
 
         with gevent.Timeout(self.timeout):
             return self.api.fetch_details(self.file_id)
+
+
+class FetchFileSegmentsJob(object):
+    """
+    A gevent green thread job to get a file segments from API.
+    """
+    def __init__(self, file_id, api, timeout=5):
+        self.file_id = file_id
+        self.api = api
+        self.timeout = timeout
+
+    def __call__(self):
+        import gevent
+
+        with gevent.Timeout(self.timeout):
+            return self.api.fetch_segments(self.file_id)
 
 
 class GeventJobs(object):
@@ -76,39 +95,66 @@ class GeventJobs(object):
         errors = [None for j in filter(lambda x: not x.successful(), jobs)]
         return len(values + errors) == len(jobs)
 
-    def get_file(self, jobs):
-        values = [j.value for j in filter(lambda x: x.successful() and x.value is not None, jobs)]
-        return values[0]
+    def success_filter(self, job):
+        return job.successful()
+
+    def is_finished_filter(self, job):
+        return self.success_filter(job) and job.value is not None and self.is_finished(job.value)
+
+    def get_data(self, jobs, filter_fn=None):
+        """
+        Return the data of successfully run jobs.
+        """
+        if not filter_fn:
+            filter_fn = self.success_filter
+
+        values = [j.value for j in filter(filter_fn, jobs)]
+        return values
 
     def fetch_file(self, file_id, limit=5, timeout=5, max_pages=MAX_PAGES):
         """
         Fetch a file status via a paginated API. We limit the calls to MAX_PAGES pages.
         The method will spawn a gevent green thread for each API call.
-        1. Return file finished status, if file found with finished status in any of the pages.
-        2. Raise exception if,
-            1.1 file not found in all the pages.
-            1.2 file in an unfinished status.
-            1.3 the API could not be reached at all.
         """
         # local import to avoid installing this package if we are employing another strategy.
         import gevent
 
         jobs = [gevent.spawn(FetchFilesJob(file_id, self._api, limit, offset, timeout)) for offset in range(0, max_pages + 1)]
         gevent.joinall(jobs)
+
         if self.is_all_error(jobs):
             raise APIException("Could not reach API at the moment.")
         if self.is_file_not_found(jobs):
             raise FileNotFound(f"File {file_id} not found in {max_pages} pages.")
-        the_file = self.get_file(jobs)
-        if not self.is_finished(the_file):
+
+        # I see multiple pages return same file data.
+        finished_files = self.get_data(jobs, filter_fn=self.is_finished_filter)
+        if len(finished_files) == 0:
             raise FileInvalidStatusError(f"File {file_id} is not in {FileStatus.FINISHED} status.")
-        return the_file
+        return finished_files[0]
 
     def fetch_file_details(self, file_id, timeout=5):
+        """
+        Fetch metadata of a file from an API.
+        The method will spawn a gevent green thread for the API call.
+        """
         import gevent
 
         job = gevent.spawn(FetchFileDetailsJob(file_id, self._api, timeout))
-        gevent.join(job)
+        gevent.joinall([job])
         if self.is_all_error([job]):
             raise APIException("Could not reach processing API at all.")
-        return job.value
+        return self.get_data([job])[0]
+
+    def fetch_file_segments(self, file_id, timeout=5):
+        """
+        Fetch extracted audio segment details of a file from an API.
+        The method will spawn a gevent green thread for the API call.
+        """
+        import gevent
+
+        job = gevent.spawn(FetchFileSegmentsJob(file_id, self._api, timeout))
+        gevent.joinall([job])
+        if self.is_all_error([job]):
+            raise APIException("Could not reach processing API at all.")
+        return self.get_data([job])[0]
