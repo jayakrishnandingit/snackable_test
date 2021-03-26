@@ -10,7 +10,7 @@
 ## Summary
 
 I could only complete the very first assignment of building a single API that serves all file and segment metadata when given a “fileId” as an
-input parameter.
+input parameter. However, I am planning to implement authentication using JWT token.
 
 ## Design
 
@@ -27,7 +27,7 @@ In addition to that, if unable to find the file or the file is not in FINISHED s
 
 ### Dilemma
 
-Then there is the question, What can be the maximum number of records I may have to check to find a file from the paginated API? I would say the answer to this question probably is, design change.
+Then there is the question, What can be the maximum number of records I may have to check to find a file from the paginated API? I would say the answer to this question probably is, design change!
 
 ### Design change - just a thought
 
@@ -68,7 +68,11 @@ Determines the maximum number of pages from the paginated API we will check befo
 
 ```
 docker-compose up api
+
+curl http://localhost:9002/api/presentation/files/{snackableFileId}
 ```
+
+I am using curl as an example, you can try in browser, Postman.
 
 ## Running tests
 
