@@ -56,7 +56,7 @@ class FetchFileDetailsJob(object):
 
 class FetchFileSegmentsJob(object):
     """
-    A gevent green thread job to get a file details from API.
+    A gevent green thread job to get a file segments from API.
     """
     def __init__(self, file_id, api, timeout=5):
         self.file_id = file_id
@@ -134,6 +134,10 @@ class GeventJobs(object):
         return finished_files[0]
 
     def fetch_file_details(self, file_id, timeout=5):
+        """
+        Fetch metadata of a file from an API.
+        The method will spawn a gevent green thread for the API call.
+        """
         import gevent
 
         job = gevent.spawn(FetchFileDetailsJob(file_id, self._api, timeout))
@@ -143,6 +147,10 @@ class GeventJobs(object):
         return self.get_data([job])[0]
 
     def fetch_file_segments(self, file_id, timeout=5):
+        """
+        Fetch extracted audio segment details of a file from an API.
+        The method will spawn a gevent green thread for the API call.
+        """
         import gevent
 
         job = gevent.spawn(FetchFileSegmentsJob(file_id, self._api, timeout))
