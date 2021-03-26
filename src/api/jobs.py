@@ -122,6 +122,16 @@ class GeventJobs(object):
         """
         Fetch a file via a paginated API. We limit the calls to MAX_PAGES pages.
         The method will spawn a gevent green thread for each API call.
+
+        I am not sure if this is the optimal approach, but given the contraints
+        I think looking at 1000 records (default MAX_PAGES = 200) concurrently is a good start.
+        We can change the no. of records by changing MAX_PAGES environment variable.
+
+        TODO: What can be the maximum number of records I may have to check to find a file?
+
+        The organic way of doing this will be for the file processing service to push a message
+        when it completes a file processing. Then we can consume that message and store in DB
+        for faster response to the user. This will require an async message queue system like RabbitMQ.
         """
         # local import to avoid installing this package if we are employing another strategy.
         import gevent
