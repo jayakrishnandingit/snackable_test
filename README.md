@@ -23,7 +23,17 @@ Talking about the API implementation, I have designed the API in 3 stages.
 2. Once the file is fetched, I try to fetch the metadata using /api/file/details/{snackableFileId} API.
 3. At last, I try to fetch the segments from /api/file/segments/{snackableFileId} API.
 
-Furthermore, if unable to find the file or the file is not in FINISHED status then the API raises a *404 Not Found* or *400 Bad Request* error respectively.
+In addition to that, if unable to find the file or the file is not in FINISHED status then the API raises a *404 Not Found* or *400 Bad Request* error respectively.
+
+### Dilemma
+
+Then there is the question, What can be the maximum number of records I may have to check to find a file from the paginated API? I would say the answer to this question probably is, design change.
+
+### Design change - just a thought
+
+The organic way of doing this will be for the file processing service to push a message when it completes processing a file. Then we can consume that message and store in DB for faster response to the user. This will require an async message queue system like RabbitMQ.
+
+I am open to suggestions. Let us discuss.
 
 ## Build API service
 
