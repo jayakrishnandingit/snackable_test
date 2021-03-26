@@ -28,4 +28,9 @@ def file_details_api(file_id):
         the_file.update(strategy.fetch_file_details(file_id))
     except APIException as e:
         return make_response(str(e), 400)
+
+    try:
+        the_file.update({'segments': strategy.fetch_file_segments(file_id)})
+    except APIException as e:
+        return make_response(str(e), 400)
     return make_response(jsonify(the_file), 200)

@@ -67,3 +67,7 @@ class ProcessingAPIAdapter(object):
     def fetch_details(self, file_id):
         relative_url = f'/api/file/details/{file_id}'
         return self._get(relative_url).json()
+
+    def fetch_segments(self, file_id):
+        relative_url = f'/api/file/segments/{file_id}'
+        return self._get(relative_url).json()
