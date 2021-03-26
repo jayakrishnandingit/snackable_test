@@ -1,0 +1,12 @@
+version: '3'
+
+services:
+  mock_api:
+    build:
+      context: .
+      dockerfile: Dockerfile_mock
+    image: snack_mock_api:latest
+    ports:
+      - 9001:9001
+    environment:
+      - FLASK_ENV=development
