@@ -7,6 +7,24 @@
 - gunicorn.
 - gevent.
 
+## Summary
+
+I could only complete the very first assignment of building a single API that serves all file and segment metadata when given a “fileId” as an
+input parameter.
+
+## Design
+
+Inorder to reduce the API call overhead, I have implemented the API using *gevent* concurrency. Gevent allows to spawn I/O jobs on a single thread using I/O loops and green threads. This is almost similar to how the Javascript event loop works.
+
+Moreover, gevent applies monkey patching to most of the sync libraries so that they behave asynchronously without the need for us to tweak the code. An excellent example, is the *requests* library which makes use of the *urllib* library under the hood which when used in conjunction with gevent is monkey patched to be asynchronous.
+
+Talking about the API implementation, I have designed the API in 3 stages.
+1. It tries to fetch the file from paginated endpoint by looking for first 200 pages (configured as MAX_PAGES env variable) ~ 1000 records.
+2. Once the file is fetched, I try to fetch the metadata using /api/file/details/{snackableFileId} API.
+3. At last, I try to fetch the segments from /api/file/segments/{snackableFileId} API.
+
+Furthermore, if unable to find the file or the file is not in FINISHED status then the API raises a *404 Not Found* or *400 Bad Request* error respectively.
+
 ## Build API service
 
 ```
