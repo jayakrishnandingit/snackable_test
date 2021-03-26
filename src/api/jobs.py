@@ -95,9 +95,18 @@ class GeventJobs(object):
         errors = [None for j in filter(lambda x: not x.successful(), jobs)]
         return len(values + errors) == len(jobs)
 
+    def success_filter(self, job):
+        return job.successful()
+
+    def is_finished_filter(self, job):
+        return self.success_filter(job) and job.value is not None and self.is_finished(job.value)
+
     def get_data(self, jobs, filter_fn=None):
+        """
+        Return the data of successfully run jobs.
+        """
         if not filter_fn:
-            filter_fn = lambda x: x.successful()
+            filter_fn = self.success_filter
 
         values = [j.value for j in filter(filter_fn, jobs)]
         return values
@@ -112,15 +121,14 @@ class GeventJobs(object):
 
         jobs = [gevent.spawn(FetchFilesJob(file_id, self._api, limit, offset, timeout)) for offset in range(0, max_pages + 1)]
         gevent.joinall(jobs)
+
         if self.is_all_error(jobs):
             raise APIException("Could not reach API at the moment.")
         if self.is_file_not_found(jobs):
             raise FileNotFound(f"File {file_id} not found in {max_pages} pages.")
+
         # I see multiple pages return same file data.
-        finished_files = self.get_data(
-            jobs,
-            filter_fn=lambda x: x.successful() and x.value is not None and self.is_finished(x.value)
-        )
+        finished_files = self.get_data(jobs, filter_fn=self.is_finished_filter)
         if len(finished_files) == 0:
             raise FileInvalidStatusError(f"File {file_id} is not in {FileStatus.FINISHED} status.")
         return finished_files[0]
@@ -141,4 +149,4 @@ class GeventJobs(object):
         gevent.joinall([job])
         if self.is_all_error([job]):
             raise APIException("Could not reach processing API at all.")
-        return return self.get_data([job])[0]
+        return self.get_data([job])[0]
