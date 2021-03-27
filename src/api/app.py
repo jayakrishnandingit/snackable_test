@@ -66,10 +66,10 @@ def file_details_api(file_id):
     try:
         the_file = model.objects.get({"_id": file_id})
     except model.DoesNotExist as e:
-        LOGGER.info(f"File {file_id} not found in local storage.")
+        LOGGER.info(f"File {file_id} not found in local storage. {str(e)}.")
         pass
     else:
-        LOGGER.info(f"File found in local storage.")
+        LOGGER.info("File found in local storage.")
         return make_response(jsonify(the_file.to_son()), 200)
 
     # otherwise, fetch the file and details from processing API.
