@@ -18,6 +18,18 @@ jobs:
       - name: List all files.
         run: |
           ls -al
+      - name: Create env file.
+        run: |
+          touch variables.env
+          echo FLASK_ENV=development >> variables.env
+          echo PROCESSING_API_HOST=http://interview-api.snackable.ai >> variables.env
+          echo MAX_PAGES=200 >> variables.env
+          echo DB_CONNECTION_STRING=mongodb://${{ secrets.MONGO_USERNAME }}:${{ secrets.MONGO_PASSWORD }}@db:27017/snackable?authSource=admin >> variables.env
+          echo MONGO_INITDB_DATABASE=snackable >> variables.env
+          echo MONGO_INITDB_ROOT_USERNAME=${{ secrets.MONGO_USERNAME }} >> variables.env
+          echo MONGO_INITDB_ROOT_PASSWORD=${{ secrets.MONGO_PASSWORD }} >> variables.env
+          echo MONGO_DATA_DIR=/data/db >> variables.env
+          echo MONGO_LOG_DIR=/dev/null >> variables.env
       - name: Docker build.
         run: docker-compose build api
       - name: Run flake8.
