@@ -18,7 +18,16 @@ services:
     image: snack_api:latest
     ports:
       - 9002:9001
-    environment:
-      - FLASK_ENV=development
-      - PROCESSING_API_HOST=http://interview-api.snackable.ai
-      - MAX_PAGES=200
+    env_file:
+      - variables.env
+    depends_on:
+      - db
+
+  db:
+    image: mongo:4.1.4
+    ports:
+      - 27018:27017
+    env_file:
+      - variables.env
+    volumes:
+      - /home/vol/mongo:/data/db

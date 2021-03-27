@@ -1,3 +1,4 @@
+import os
 import logging
 import unittest
 from unittest.mock import patch
@@ -8,6 +9,7 @@ from api.app import app
 from api.exceptions import APIException
 
 LOGGER = logging.getLogger(__name__)
+DB_CONNECTION_STRING = os.environ.get('DB_CONNECTION_STRING')
 FILES = [
     {
         "fileId": "08448513-b980-4267-abeb-2445b4069a0c",
@@ -33,13 +35,37 @@ FILES = [
 
 FILE_DETAILS = {
     "4a551eec-7dac-46d2-8f17-b6972b864b34": {
-        "fileId": "4a551eec-7dac-46d2-8f17-b6972b864b34",
-        "originalFile": "http://example.com/abc.mp3"
+        "fileName": "1a4bae87-1eec-46de-9efb-657be6eaa8fa",
+        "fileLength": 2870700,
+        "mp3Path": "https://s3.amazonaws.com/snackable-test-audio/mp3Audio/1a4bae87-1eec-46de-9efb-657be6eaa8fa_constant_bitrate.mp3",
+        "originalFilePath": "https://s3.amazonaws.com/snackable-test-crawler-audio/1a4bae87-1eec-46de-9efb-657be6eaa8fa.mp3",
+        "seriesTitle": "Royally Obsessed"
     }
+}
+
+SEGMENTS = {
+    "4a551eec-7dac-46d2-8f17-b6972b864b34": [
+        {
+            "fileSegmentId": 1342,
+            "fileId": "4a551eec-7dac-46d2-8f17-b6972b864b34",
+            "segmentText": "Hey please rise for their majesties of royalty obsessed the podcast for all things modern. Welcome back to royalty obsessed.",
+            "startTime": 1730,
+            "endTime": 16080
+        }
+    ]
 }
 
 
 class FileDetailsAPITestCase(unittest.TestCase):
+    def setUp(self):
+        from pymodm import connect
+        from api.models import FileModel
+
+        self.model = FileModel
+        connect("mongodb://mongosnack:kcansognom@db:27017/testdb?authSource=admin")
+
+    def tearDown(self):
+        self.model.objects.all().delete()
 
     @patch('api.jobs.ProcessingAPIAdapter')
     def test_processing_file_is_bad_request(self, MockAPIClass):
@@ -102,3 +128,42 @@ class FileDetailsAPITestCase(unittest.TestCase):
         with app.test_client() as c:
             rv = c.get('/api/presentation/files/4a551eec-7dac-46d2-8f17-b6972b864b34')
             self.assertEqual(rv.status_code, 400)
+
+    @patch('api.jobs.ProcessingAPIAdapter')
+    def test_value_not_in_storage_is_fetched_from_api(self, MockAPIClass):
+        mock_instance = MockAPIClass.return_value
+        mock_instance.fetch_all.return_value = FILES
+        mock_instance.fetch_details.return_value = FILE_DETAILS['4a551eec-7dac-46d2-8f17-b6972b864b34']
+        mock_instance.fetch_segments.return_value = SEGMENTS['4a551eec-7dac-46d2-8f17-b6972b864b34']
+        with app.test_client() as c:
+            rv = c.get('/api/presentation/files/4a551eec-7dac-46d2-8f17-b6972b864b34')
+            self.assertEqual(rv.status_code, 201)
+
+    @patch('api.jobs.ProcessingAPIAdapter')
+    def test_value_in_storage_is_not_fetched_from_api(self, MockAPIClass):
+        the_file = {
+            "fileId": "4a551eec-7dac-46d2-8f17-b6972b864b34",
+            "processingStatus": "FINISHED",
+            "fileName": "1a4bae87-1eec-46de-9efb-657be6eaa8fa",
+            "fileLength": 2870700,
+            "mp3Path": "https://s3.amazonaws.com/snackable-test-audio/mp3Audio/1a4bae87-1eec-46de-9efb-657be6eaa8fa_constant_bitrate.mp3",
+            "originalFilePath": "https://s3.amazonaws.com/snackable-test-crawler-audio/1a4bae87-1eec-46de-9efb-657be6eaa8fa.mp3",
+            "seriesTitle": "Royally Obsessed",
+            "segments": [
+                {
+                    "fileSegmentId": 1342,
+                    "fileId": "4a551eec-7dac-46d2-8f17-b6972b864b34",
+                    "segmentText": "Hey please rise for their majesties of royalty obsessed the podcast for all things modern. Welcome back to royalty obsessed.",
+                    "startTime": 1730,
+                    "endTime": 16080
+                }
+            ]
+        }
+        self.model(**the_file).save()
+        mock_instance = MockAPIClass.return_value
+        mock_instance.fetch_all.return_value = FILES
+        mock_instance.fetch_details.return_value = FILE_DETAILS['4a551eec-7dac-46d2-8f17-b6972b864b34']
+        mock_instance.fetch_segments.return_value = SEGMENTS['4a551eec-7dac-46d2-8f17-b6972b864b34']
+        with app.test_client() as c:
+            rv = c.get('/api/presentation/files/4a551eec-7dac-46d2-8f17-b6972b864b34')
+            self.assertEqual(rv.status_code, 200)
