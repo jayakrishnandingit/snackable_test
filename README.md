@@ -6,6 +6,7 @@
 - Flask.
 - gunicorn.
 - gevent.
+- MongoDB.
 
 ## Summary
 
