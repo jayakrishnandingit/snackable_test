@@ -73,26 +73,6 @@ The organic way of doing this will be for the file processing service to push a 
 
 I am open to suggestions. Let us discuss.
 
-## Build API service
-
-```
-cd snackable_test
-
-docker-compose build api
-```
-
-## Run the API
-
-Before running the API, please modify the DB credentials in `variables.env` file. You can create this file by copying from `sample.env` file for defaults. Credentials in sample.env are dummy and need not work.
-
-```
-docker-compose up api
-
-curl http://localhost:9002/api/presentation/files/{snackableFileId}
-```
-
-I am using curl as an example, you can try in browser, Postman.
-
 ## Environment variables
 
 Copy the sample env file to `variables.env` file and make changes as required.
@@ -117,6 +97,26 @@ This env variable stores the API host name to call to fetch different file detai
 MAX_PAGES=200
 ```
 Determines the maximum number of pages from the paginated API we will check before declaring file not found. 200 pages = 1000 records with 5 records per page limit.
+
+## Build API service
+
+```
+cd snackable_test
+
+docker-compose build api
+```
+
+## Run the API
+
+Before running the API, please modify the DB credentials in `variables.env` file. You can create this file by copying from `sample.env` file for defaults. Credentials in sample.env are dummy and need not work.
+
+```
+docker-compose up api
+
+curl http://localhost:9002/api/presentation/files/{snackableFileId}
+```
+
+I am using curl as an example, you can try in browser, Postman.
 
 ## Running tests
 
