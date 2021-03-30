@@ -73,30 +73,7 @@ The organic way of doing this will be for the file processing service to push a 
 
 I am open to suggestions. Let us discuss.
 
-## Environment variables
 
-Copy the sample env file to `variables.env` file and make changes as required.
-```
-cp sample.env variables.env
-```
-Variables to look for are,
-
-```
-DB_CONNECTION_STRING=mongodb://<username>:<password>@db:27017/snackable?authSource=admin
-MONGO_INITDB_ROOT_USERNAME=<username>
-MONGO_INITDB_ROOT_PASSWORD=<password>
-```
-Change this to your preference. This is used to login to mongoDB service. Refer `docker-compose.yml` file to understand the mongo service.
-
-```
-PROCESSING_API_HOST=http://interview-api.snackable.ai
-```
-This env variable stores the API host name to call to fetch different file details. Please note that it *does not* have a *trailing slash (/)*.
-
-```
-MAX_PAGES=200
-```
-Determines the maximum number of pages from the paginated API we will check before declaring file not found. 200 pages = 1000 records with 5 records per page limit.
 
 ## Build API service
 
@@ -108,8 +85,66 @@ docker-compose build api
 
 ## Run the API
 
-Before running the API, please modify the DB credentials in `variables.env` file. You can create this file by copying from `sample.env` file for defaults. Credentials in sample.env are dummy and need not work.
 
+### Without Docker
+
+#### Apply environment variables
+
+```
+export FLASK_APP=./src/api/app.py
+export FLASK_ENV=development
+export PROCESSING_API_HOST=http://interview-api.snackable.ai
+export MAX_PAGES=200
+```
+
+#### Install dependencies
+
+Create a virtualenv. _We can do this without a virtualenv by installing the project dependencies system wide. However, it is recommended we do it inside a virtualenv to avoid version conflicts._
+```
+python3 -m venv /path/to/snackable_env
+```
+Activate the virtualenv.
+
+*Linux command*
+```
+source /path/to/snackable_env/bin/activate
+```
+
+Install packages
+
+```
+cd snackable_test/src
+pip install --upgrade pip
+pip install -r api/requirements.txt
+```
+
+#### Run API
+```
+cd snackable_test/src
+gunicorn -k gevent -w 2 api.app:app -b 0.0.0.0:9002 -t 300
+```
+
+### With Docker
+
+#### Apply environment variables
+
+Copy the sample env file to `variables.env` file and make changes as required.
+```
+cp sample.env variables.env
+```
+Variables to look for are,
+
+```
+PROCESSING_API_HOST=http://interview-api.snackable.ai
+```
+This env variable stores the API host name to call to fetch different file details. Please note that it *does not* have a *trailing slash (/)*.
+
+```
+MAX_PAGES=200
+```
+Determines the maximum number of pages from the paginated API we will check before declaring file not found. 200 pages = 1000 records with 5 records per page limit.
+
+#### Run
 ```
 docker-compose up api
 
@@ -118,7 +153,7 @@ curl http://localhost:9002/api/presentation/files/{snackableFileId}
 
 I am using curl as an example, you can try in browser, Postman.
 
-## Running tests
+#### Running tests
 
 I have added **flake8** package to do a basic code sanity check.
 

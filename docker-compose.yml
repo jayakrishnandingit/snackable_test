@@ -20,12 +20,3 @@ services:
       - 9002:9001
     env_file:
       - variables.env
-
-  db:
-    image: mongo:4.1.4
-    ports:
-      - 27018:27017
-    env_file:
-      - variables.env
-    volumes:
-      - /home/vol/mongo:/data/db
