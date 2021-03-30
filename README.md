@@ -124,6 +124,15 @@ cd snackable_test/src
 gunicorn -k gevent -w 2 api.app:app -b 0.0.0.0:9002 -t 300
 ```
 
+#### Running tests
+
+```
+cd snackable_test/src
+flake8 api
+python -m unittest
+```
+
+
 ### With Docker
 
 #### Apply environment variables
