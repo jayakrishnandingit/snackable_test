@@ -73,7 +73,7 @@ The organic way of doing this will be for the file processing service to push a 
 
 I am open to suggestions. Let us discuss.
 
-## Without Docker
+## Getting Started - Without Docker
 
 ### Apply environment variables
 
@@ -83,6 +83,17 @@ export FLASK_ENV=development
 export PROCESSING_API_HOST=http://interview-api.snackable.ai
 export MAX_PAGES=200
 ```
+
+### Makefile commands
+
+I added a `Makefile` to build and run the application using `make` command.
+```
+make venv
+make pip
+make run-api
+```
+
+If `make` does not work, then you can refer below steps for manual setup.
 
 ### Install dependencies
 
@@ -119,7 +130,7 @@ flake8 api
 python -m unittest
 ```
 
-## With Docker
+## Getting Started - With Docker
 
 ### Apply environment variables
 
